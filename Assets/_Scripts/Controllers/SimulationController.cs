@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class SimulationController : MonoBehaviour 
@@ -24,6 +22,7 @@ public class SimulationController : MonoBehaviour
 
     private void Awake()
     {
+        // Initialize the reset timer
         SetResetTimer();
     }
 
@@ -69,57 +68,24 @@ public class SimulationController : MonoBehaviour
         cells = _cells;
         cellStates = new int[cells.GetLength(0), cells.GetLength(1)];
 
-        // Set the cell states and subscribe to their delegates
+        // Subscribe to the cells delegates
         for (int x = 0; x < cells.GetLength(0); x++)
         {
             for (int y = 0; y < cells.GetLength(1); y++)
             {
-                Cell _cell = cells[x, y];
-                cellStates[x, y] = _cell.isAlive ? 1 : 0;
-                _cell.OnCellStateChanged += Cell_OnStateChanged;
+                cells[x, y].OnCellStateSet += UpdateCellState;
             }
         }
-        
-        // Update the cell counts
+
+        // Set the cell states and update their counts
         totalCellCount = cells.GetLength(0) * cells.GetLength(1);
-        UpdateCellStates();
+        UpdateCellStateMap();
+        
+        // Set the simulation steps count
         simulationSteps = 0;
 
         // Invoke the on simulation initialized event
-        OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
-    }
-
-    private void Cell_OnStateChanged(Vector2 cellPosition, bool cellState)
-    {
-        // Update the cell states array
-        cellStates[(int) cellPosition.x, (int) cellPosition.y] = cellState ? 1 : 0;
-
-        // Update the dead/alive cell counts
-        UpdateCellCounts();
-    }
-
-    private void UpdateCellCounts()
-    {
-        // Reset the dead/alive cell counts
-        deadCellCount = 0;
-        livingCellCount = 0;
-
-        /* 
-         * To find the number of living cells, just find the sum of all elements in the cellStates array. The zeros will not affect the sum so the total will be the number of living cells.
-         * To find the number of dead cells, subtract the number of living from the total
-         */
-        for (int x = 0; x < cellStates.GetLength(0); x++) 
-        {
-            for (int y = 0; y < cellStates.GetLength(1); y++)
-            {
-                livingCellCount += cellStates[x, y];
-            }
-        }
-
-        deadCellCount = totalCellCount - livingCellCount;
-
-        // Invoke the on simulation state changed event
-        OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
+        OnSimulationStateChanged?.Invoke(totalCellCount, deadCellCount, livingCellCount, simulationSteps);
     }
 
     public void StartSimulation()
@@ -140,6 +106,7 @@ public class SimulationController : MonoBehaviour
         if (livingCellCount == 0)
         {
             Debug.Log("Simulation step not completed as there aren't any living cells");
+            isSimulating = false;
             return;
         }
 
@@ -158,7 +125,8 @@ public class SimulationController : MonoBehaviour
         }
 
         // Update the cell states and counts
-        UpdateCellStates(_indicesToToggle);
+        UpdateCellMap(_indicesToToggle);
+        UpdateCellStateMap();
 
         // Update the simulation step count
         simulationSteps++;
@@ -166,27 +134,60 @@ public class SimulationController : MonoBehaviour
         //PrintCellStatesToConsole();
     }
 
-    private void UpdateCellStates(List<List<int>> _indicesToToggle = null)
+    private void UpdateCellState(bool _isAlive, int _posX, int _posY)
     {
-        if (_indicesToToggle != null)
+        if (_isAlive)
         {
-            foreach (List<int> _indices in _indicesToToggle)
-            {
-                int x = _indices[0];
-                int y = _indices[1];
-                cells[x, y].ToggleCellState();
-            }
+            cellStates[_posX, _posY] = 1;
+            livingCellCount++;
+            deadCellCount--;
+        }
+        else
+        {
+            cellStates[_posX, _posY] = 0;
+            livingCellCount--;
+            deadCellCount++;
+        }
+    }
+
+    private void UpdateCellMap(List<List<int>> _indicesToToggle)
+    {
+        // Toggle each of the cells whose indices were passed
+        foreach (List<int> _indices in _indicesToToggle)
+        {
+            int x = _indices[0];
+            int y = _indices[1];
+            cells[x, y].ToggleCellState();
         }
 
+        // Invoke the on simulation state changed event
+        OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
+    }
+
+    private void UpdateCellStateMap()
+    {
+        // Reset the cell counts
+        deadCellCount = 0;
+        livingCellCount = 0;
+
+        // Iterate over each cell in the map
         for (int x = 0; x < cells.GetLength(0); x++)
         {
             for (int y = 0; y < cells.GetLength(1); y++)
             {
-                cellStates[x, y] = cells[x, y].isAlive ? 1 : 0;
+                // Update the cell state value and increment the associated value
+                if (cells[x, y].isAlive)
+                {
+                    cellStates[x, y] = 1;
+                    livingCellCount++;
+                }
+                else
+                {
+                    cellStates[x, y] = 0;
+                    deadCellCount++;
+                }
             }
         }
-
-        UpdateCellCounts();
     }
 
     private Cell[] GetCellNeighbors(int _posX, int _posY, Cell[,] _cells)

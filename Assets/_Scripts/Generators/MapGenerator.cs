@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -23,12 +20,12 @@ public class MapGenerator : MonoBehaviour
                 Vector3 cellPosition = new Vector3((-cellCountX / 2 + 0.5f + x) * cellScale, (-cellCountY / 2 + 0.5f + y) * cellScale, transform.position.z);
 
                 // Instantiate a new cell object as a transform, then scale it using the map scale param to fit each cell in tidy
-                Transform newCell = Instantiate(cellPrefab, cellPosition, Quaternion.identity, transform) as Transform;
+                Transform newCell = Instantiate(cellPrefab, cellPosition, Quaternion.identity, transform);
                 newCell.localScale = new Vector3(cellScale, cellScale, 1);
 
                 // Get the cell component, set the position, and insert it into the 2D cell array
                 Cell _cell = newCell.gameObject.GetComponentInChildren<Cell>();
-                _cell.cellPosition = new Vector2(x, y);
+                _cell.SetCellPosition(x, y);
                 _cellMap[x, y] = _cell;
             }
         }
@@ -63,7 +60,7 @@ public class MapGenerator : MonoBehaviour
     public int[,] GenerateCellStateMap(int _seedNumber, float _livingProbability)
     {
         // Use the seed number to create a new random object to help with the obvious
-        System.Random _randomizer = new System.Random(_seedNumber); ;
+        System.Random _randomizer = new System.Random(_seedNumber);
 
         // 2D array matching the x/y dimensions
         int[,] _cellStates = new int[cellCountX, cellCountY];
@@ -91,10 +88,7 @@ public class MapGenerator : MonoBehaviour
 
     private float GenerateRandomFloat01(System.Random _random)
     {
-        int _minValue = -100000;
-        int _maxValue = 100000;
-        float _value = (float) _random.Next(_minValue, _maxValue);
-        return MapFloat01(_value, _minValue, _maxValue);
+        return MapFloat01((float)_random.Next(NumberCruncher.randomMinInt, NumberCruncher.randomMaxInt), NumberCruncher.randomMinInt, NumberCruncher.randomMaxInt);
     }
 
     private float MapFloat01(float _value, float _minFrom, float _maxFrom)

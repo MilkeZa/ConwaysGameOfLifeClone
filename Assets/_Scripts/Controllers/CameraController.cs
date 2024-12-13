@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.SearchService;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -8,12 +5,11 @@ public class CameraController : MonoBehaviour
     [SerializeField] private Canvas uiCanvas;
     private Camera mainCamera;
 
+    [SerializeField][Range(0, 500)] private float zoomSpeed = 500f;
+    [SerializeField][Range(0, 500)] private float translationSpeed = 5f;
 
-    [SerializeField][Range(0, 500)] private float zoomSpeed = 100f;
-    [SerializeField][Range(0, 10)] private float translationSpeed = 0.5f;
-
-    private float minimumOrthographicScale = 0.1f;
-    private float maximumOrthographicScale = 25f;
+    [SerializeField] private float minimumOrthographicScale = 0.1f;
+    [SerializeField] private float maximumOrthographicScale = 25f;
 
     private void Start()
     {
@@ -34,19 +30,20 @@ public class CameraController : MonoBehaviour
         // Camera can be moved by pressing and holding the mouses scroll wheel and moving the mouse
         if (Input.GetMouseButton(2))
         {
-            // Get the mouse movement on the x, y axes
-            float _movementX = Input.GetAxis("Mouse X");
-            float _movementY = Input.GetAxis("Mouse Y");
+            // The mouse has movement on both the x and y axes
+            float _mouseMovementX = Input.GetAxis("Mouse X");
+            float _mouseMovementY = Input.GetAxis("Mouse Y");
 
             // Calculate and apply the mouse movement input
-            MoveCamera(_movementX, _movementY);
+            MoveCamera(_mouseMovementX, _mouseMovementY);
         }
     }
 
     private void ZoomCamera(float _scrollInput)
     {
         // Calculate the offset produced by the given scroll input
-        float _scaleOffset = -_scrollInput * zoomSpeed * Time.deltaTime;
+        //float _scaleOffset = -_scrollInput * zoomSpeed * Time.deltaTime;
+        float _scaleOffset = -_scrollInput * zoomSpeed * Time.fixedDeltaTime;
 
         // Clamp the value between the minimum and maximum scales
         float _finalOrthographicScale = Mathf.Clamp(
@@ -66,8 +63,10 @@ public class CameraController : MonoBehaviour
     {
         // Calculate the offset on each axis and create a new v3 with the values
         Vector3 _offset = new Vector3(
-            _movementX * translationSpeed * Time.deltaTime, 
-            _movementY * translationSpeed * Time.deltaTime, 
+                        //_movementX * translationSpeed * Time.deltaTime, 
+                        //_movementY * translationSpeed * Time.deltaTime, 
+            _movementX * translationSpeed * Time.fixedDeltaTime,
+            _movementY * translationSpeed * Time.fixedDeltaTime,
             0f) * mainCamera.orthographicSize;
 
         // Apply the offset to the camera and uicanvas transforms

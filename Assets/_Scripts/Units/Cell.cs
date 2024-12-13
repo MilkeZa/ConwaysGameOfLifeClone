@@ -1,23 +1,36 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class Cell : MonoBehaviour, IPointerClickHandler
 {
-    public Action<Vector2, bool> OnCellStateChanged;
+    public event Action<bool, int, int> OnCellStateSet;
 
     public bool isAlive { get; private set; } = false;
-    public Vector2 cellPosition;
-    private SpriteRenderer spriteRenderer;
+    public int posX { get; private set; }
+    public int posY { get; private set; }
+
     [SerializeField] private Color cellAliveColor = Color.yellow;
     [SerializeField] private Color cellDeadColor = Color.grey;
 
+    private SpriteRenderer spriteRenderer;
+    private BoxCollider2D cellCollider;
+
     private void Awake()
     {
+        // Get the sprite renderer and set the color
         spriteRenderer = GetComponent<SpriteRenderer>();
         SetCellColor();
+
+        // Get the box collider
+        cellCollider = GetComponent<BoxCollider2D>();
+    }
+
+    public void SetCellPosition(int _posX, int _posY)
+    {
+        // Set the x and y position values
+        posX = _posX; 
+        posY = _posY;
     }
 
     public void SetCellState(bool isAlive)
@@ -25,10 +38,7 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         // Update the isAlive bool and set the color
         this.isAlive = isAlive;
         SetCellColor();
-
-        // Invoke the on cell state changed action
-        OnCellStateChanged?.Invoke(cellPosition, isAlive);
-        //Debug.Log($"Cell ({(int)cellPosition.x}, {(int)cellPosition.y}) changed state");
+        OnCellStateSet?.Invoke(isAlive, posX, posY);
     }
 
     public void ToggleCellState()
@@ -48,5 +58,27 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     {
         // Toggle the cell state when clicked
         ToggleCellState();
+    }
+
+    public void DisableCollider()
+    {
+        cellCollider.enabled = false;
+    }
+
+    public void EnableCollider()
+    {
+        cellCollider.enabled = true;
+    }
+
+    private void OnBecameInvisible()
+    {
+        // Disable the cell collider as it can no longer be clicked. This improves performance considerably as colliders are taxing.
+        DisableCollider();
+    }
+
+    private void OnBecameVisible()
+    {
+        // Enable the cell collider as it may now be clicked
+        EnableCollider();
     }
 }
