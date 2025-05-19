@@ -41,3 +41,6 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Living Cell Bounding Box
+    uniqueID: 463474967
+    locked: 0

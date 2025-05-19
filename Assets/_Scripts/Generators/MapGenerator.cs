@@ -2,10 +2,20 @@ using UnityEngine;
 
 public class MapGenerator : MonoBehaviour
 {
-    [SerializeField] private Transform cellPrefab;
-    [SerializeField] private float cellScale;
-    [SerializeField] private int cellCountX, cellCountY;
+    #region Variables
 
+    [SerializeField] private Transform cellPrefab;          // Prefab used when instantiating cells.
+    [SerializeField] private float cellScale;               // Size of cell.
+    [SerializeField] private int cellCountX, cellCountY;    // Number of cells on the x and y axes.
+
+    #endregion
+
+    #region GenerationMethods
+
+    /// <summary>
+    /// Generate the 2D array of cells (map) to be used for the simulation.
+    /// </summary>
+    /// <returns>2D array of cell objects.</returns>
     public Cell[,] GenerateMap()
     {
         // 2D array to hold the cell objects
@@ -34,6 +44,12 @@ public class MapGenerator : MonoBehaviour
         return _cellMap;
     }
 
+    /// <summary>
+    /// Generate the 2D array of cells.
+    /// </summary>
+    /// <param name="_seed">Random seed used when generating the array.</param>
+    /// <param name="_livingProbability">Probability a cell will be alive when generated.</param>
+    /// <returns></returns>
     public Cell[,] GenerateMapFromSeed(int _seed, float _livingProbability)
     {
         // Initialize the map
@@ -57,6 +73,12 @@ public class MapGenerator : MonoBehaviour
         return _cellMap;
     }
 
+    /// <summary>
+    /// Generate the cell state map.
+    /// </summary>
+    /// <param name="_seedNumber">Random seed used when generating the state map.</param>
+    /// <param name="_livingProbability">Probability of a cell being alive when generated.</param>
+    /// <returns></returns>
     public int[,] GenerateCellStateMap(int _seedNumber, float _livingProbability)
     {
         // Use the seed number to create a new random object to help with the obvious
@@ -86,13 +108,31 @@ public class MapGenerator : MonoBehaviour
         return _cellStates;
     }
 
+    /// <summary>
+    /// Generate a random float in the range [0.0, 1.0]
+    /// </summary>
+    /// <param name="_random"></param>
+    /// <returns></returns>
     private float GenerateRandomFloat01(System.Random _random)
     {
         return MapFloat01((float)_random.Next(NumberCruncher.randomMinInt, NumberCruncher.randomMaxInt), NumberCruncher.randomMinInt, NumberCruncher.randomMaxInt);
     }
 
+    #endregion
+
+    #region UtilityMethods
+
+    /// <summary>
+    /// Map a float between 0 and 1.
+    /// </summary>
+    /// <param name="_value">Value to be mapped.</param>
+    /// <param name="_minFrom">Minimum value in range.</param>
+    /// <param name="_maxFrom">Maximum value in range.</param>
+    /// <returns></returns>
     private float MapFloat01(float _value, float _minFrom, float _maxFrom)
     {
         return (_value - _minFrom) * 1f / (_maxFrom - _minFrom);
     }
+
+    #endregion
 }

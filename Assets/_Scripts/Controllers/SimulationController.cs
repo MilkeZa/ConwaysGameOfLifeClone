@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class SimulationController : MonoBehaviour 
 {
+    #region Variables
+
     public event Action<int?, int, int, int> OnSimulationStateChanged;  // Called anytime the state of the simulation changes
 
     private Cell[,] cells;      // 2D array of cells
@@ -20,11 +23,54 @@ public class SimulationController : MonoBehaviour
     private float secondsToUpdateBase;  // Base value used to set seconds to update
     private float secondsToUpdate;      // Number of seconds simulation will wait before taking another step
 
+    [SerializeField] private bool drawBoundingBox = false;  // Draws a bounding box surrounding the living cells in the scene. WARNING: Enabling has a considerable performance impact as it iterates over the cell state map constantly
+    private LineRenderer bbLineRenderer;                    // Used to draw the bounding box surrounding living cells
+    private bool updateBoundingBox = false;
+
+    #endregion
+
+    #region UnityMethods
+
     private void Awake()
     {
         // Initialize the reset timer
         SetResetTimer();
+
+        // Get the line renderer component
+        bbLineRenderer = GetComponent<LineRenderer>();
     }
+
+    private void Update()
+    {
+        // Continue the simulation if enabled
+        if (isSimulating)
+        {
+            // Check if the simulation timer has expired
+            secondsToUpdate -= Time.deltaTime;
+            if (secondsToUpdate <= 0)
+            {
+                // Step the simulation
+                StepSimulation();
+
+                // Reset the timer
+                ResetUpdateTimer();
+            }
+
+            // Update the bounding box if enabled
+            if (drawBoundingBox && updateBoundingBox)
+            {
+                // Draw the bounding box
+                DrawBoundingBox();
+
+                // Reset the draw flag
+                updateBoundingBox = false;
+            }
+        }
+    }
+
+    #endregion
+
+    #region TimerMethods
 
     private void SetResetTimer()
     {
@@ -62,6 +108,14 @@ public class SimulationController : MonoBehaviour
         //Debug.Log($"Simulation Update Timer Reset!");
     }
 
+    #endregion
+
+    #region SimulationMethods
+
+    /// <summary>
+    /// Initialize the simulation.
+    /// </summary>
+    /// <param name="_cells">2D array containing cells to simulate.</param>
     public void InitializeSimulationState(Cell[,] _cells)
     {
         // Set the cell and cell state arrays
@@ -88,18 +142,27 @@ public class SimulationController : MonoBehaviour
         OnSimulationStateChanged?.Invoke(totalCellCount, deadCellCount, livingCellCount, simulationSteps);
     }
 
+    /// <summary>
+    /// Start the simulation, causing it to evaluate the next step and beyond.
+    /// </summary>
     public void StartSimulation()
     {
         isSimulating = true;
         OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
     }
 
+    /// <summary>
+    /// Pause the simulation, stopping it from evaluating the next step.
+    /// </summary>
     public void PauseSimulation()
     {
         isSimulating = false;
         OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
     }
 
+    /// <summary>
+    /// Evaluate one step of the simulation.
+    /// </summary>
     public void StepSimulation()
     {
         // Check if there are any living cells to work with
@@ -130,10 +193,20 @@ public class SimulationController : MonoBehaviour
 
         // Update the simulation step count
         simulationSteps++;
+
+        // Set the bounding box flag
+        updateBoundingBox = true;
+
         //Debug.Log($"Simulation step {simulationSteps}");
         //PrintCellStatesToConsole();
     }
 
+    /// <summary>
+    /// Update the living/dead cell statistic.
+    /// </summary>
+    /// <param name="_isAlive">True if a cell is alive, otherwise, false.</param>
+    /// <param name="_posX">X position of the given cell.</param>
+    /// <param name="_posY">Y position of the given cell.</param>
     private void UpdateCellState(bool _isAlive, int _posX, int _posY)
     {
         if (_isAlive)
@@ -150,6 +223,10 @@ public class SimulationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Update the map containing each cell.
+    /// </summary>
+    /// <param name="_indicesToToggle">Indices of cells whose state are to be toggled.</param>
     private void UpdateCellMap(List<List<int>> _indicesToToggle)
     {
         // Toggle each of the cells whose indices were passed
@@ -164,6 +241,9 @@ public class SimulationController : MonoBehaviour
         OnSimulationStateChanged?.Invoke(null, deadCellCount, livingCellCount, simulationSteps);
     }
 
+    /// <summary>
+    /// Update the map containing the state of each cell.
+    /// </summary>
     private void UpdateCellStateMap()
     {
         // Reset the cell counts
@@ -190,6 +270,13 @@ public class SimulationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Get a given cells surrounding cells.
+    /// </summary>
+    /// <param name="_posX">X position of the cell to be evaluated.</param>
+    /// <param name="_posY">Y position of the cell to be evaluated.</param>
+    /// <param name="_cells">Grid of cells being evaluated.</param>
+    /// <returns>Array of neighboring cells.</returns>
     private Cell[] GetCellNeighbors(int _posX, int _posY, Cell[,] _cells)
     {
         int _rowCount = _cells.GetLength(0);
@@ -255,6 +342,12 @@ public class SimulationController : MonoBehaviour
         return _neighbors;
     }
 
+    /// <summary>
+    /// Evaluate the cell state.
+    /// </summary>
+    /// <param name="_cell">Cell to be evaluated.</param>
+    /// <param name="_neighbors">Each of the cells surrounding neighbors.</param>
+    /// <returns>True if the cell should be marked living, otherwise, false.</returns>
     private bool EvaluateCell(Cell _cell, Cell[] _neighbors)
     {
         // Count the number of living and dead neighbors
@@ -309,6 +402,102 @@ public class SimulationController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Set the state of the bounding box renderer.
+    /// </summary>
+    /// <param name="_state">Enabled when true, otherwise, disabled.</param>
+    public void SetBoundingBoxRendererState(bool _state)
+    {
+        if (_state)
+        {
+            // Enable the bounding box line renderer component
+            bbLineRenderer.enabled = true;
+            ResetBoundingBox();
+        }
+        else
+        {
+            // Disable the line renderer component
+            bbLineRenderer.enabled = false;
+            ResetBoundingBox();
+        }
+    }
+
+    /// <summary>
+    /// Draws a bounding box around the living cells within the scene.
+    /// </summary>
+    private void DrawBoundingBox()
+    {
+        // Minimum x and y positions of the living cells
+        float _minX = float.MaxValue;
+        float _minY = float.MaxValue;
+
+        // Maximum x and y positions of the living cells
+        float _maxX = float.MinValue;
+        float _maxY = float.MinValue;
+
+        // Iterate through each row
+        for (int x = 0; x < cellStates.GetLength(0); x++)
+        {
+            // Iterate through each col
+            for (int y = 0; y < cellStates.GetLength(1); y++)
+            {
+                // Check if the cell is alive
+                if (cells[x, y].isAlive)
+                {
+                    // Grab the cell position in world space
+                    Vector3 _cellPos = cells[x, y].transform.position;
+
+                    // Compare the x positions
+                    if (_cellPos.x < _minX)
+                    {
+                        _minX = _cellPos.x;
+                    }
+                    
+                    if (_cellPos.x > _maxX)
+                    {
+                        _maxX = _cellPos.x;
+                    }
+
+                    // Compare the y positions
+                    if (_cellPos.y < _minY)
+                    {
+                        _minY = _cellPos.y;
+                    }
+                    
+                    if (_cellPos.y > _maxY)
+                    {
+                        _maxY = _cellPos.y;
+                    }
+                }
+            }
+        }
+
+        // Pass the points along to the line renderer to be drawn
+        bbLineRenderer.SetPositions(new Vector3[]
+        {
+            new Vector3(_minX, _minY, -1f),  // Bottom left
+            new Vector3(_minX, _maxY, -1f),  // Top Left
+            new Vector3(_maxX, _maxY, -1f),  // Top Right
+            new Vector3(_maxX, _minY, -1f)   // Bottom Right
+        });
+    }
+
+    /// <summary>
+    /// Reset the bounding box.
+    /// </summary>
+    private void ResetBoundingBox()
+    {
+        // Set the number of positions to zero
+        bbLineRenderer.positionCount = 0;
+    }
+
+    #endregion
+
+    #region DebugMethods
+
+    /// <summary>
+    /// Outputs the cell state map to the console log.
+    /// </summary>
     private void PrintCellStatesToConsole()
     {
         string _cellStates = "";
@@ -323,20 +512,12 @@ public class SimulationController : MonoBehaviour
         Debug.Log(_cellStates);
     }
 
-    private void Update()
-    {
-        if (isSimulating)
-        {
-            secondsToUpdate -= Time.deltaTime;
-            if (secondsToUpdate <= 0)
-            {
-                StepSimulation();
-                ResetUpdateTimer();
-            }
-        }
-    }
+    #endregion
 }
 
+/// <summary>
+/// Struct used to control speed at which simulation runs. Faster speeds may impact performance.
+/// </summary>
 public enum SimulationSpeed
 {
     VerySlow = 0,

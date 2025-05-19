@@ -2,14 +2,20 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    #region Variables
+
     [SerializeField] private Canvas uiCanvas;
     private Camera mainCamera;
 
-    [SerializeField][Range(0, 500)] private float zoomSpeed = 500f;
-    [SerializeField][Range(0, 500)] private float translationSpeed = 5f;
+    [SerializeField][Range(0, 500)] private float zoomSpeed = 500f;         // Speed at which camera will zoom in/out
+    [SerializeField][Range(0, 500)] private float translationSpeed = 5f;    // Speed at which camera will move side/side, up/down
 
-    [SerializeField] private float minimumOrthographicScale = 0.1f;
-    [SerializeField] private float maximumOrthographicScale = 25f;
+    [SerializeField] private float minimumOrthographicScale = 0.1f;         // Min. scale (max. zoom) camera will allow
+    [SerializeField] private float maximumOrthographicScale = 25f;          // Max. scale (min. zoom) camera will allow
+
+    #endregion
+
+    #region UnityMethods
 
     private void Start()
     {
@@ -39,10 +45,15 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    #endregion
+
+    /// <summary>
+    /// Calculate and apply the new camera orthographic scale (zoom).
+    /// </summary>
+    /// <param name="_scrollInput">Amount of zoom input.</param>
     private void ZoomCamera(float _scrollInput)
     {
         // Calculate the offset produced by the given scroll input
-        //float _scaleOffset = -_scrollInput * zoomSpeed * Time.deltaTime;
         float _scaleOffset = -_scrollInput * zoomSpeed * Time.fixedDeltaTime;
 
         // Clamp the value between the minimum and maximum scales
@@ -59,12 +70,15 @@ public class CameraController : MonoBehaviour
         uiCanvas.transform.localScale = _finalUIScale;
     }
 
+    /// <summary>
+    /// Calculate and apply the new camera position.
+    /// </summary>
+    /// <param name="_movementX">Amount of movement on the x-axis.</param>
+    /// <param name="_movementY">Amount of movement on the y-axis.</param>
     private void MoveCamera(float _movementX, float _movementY)
     {
         // Calculate the offset on each axis and create a new v3 with the values
         Vector3 _offset = new Vector3(
-                        //_movementX * translationSpeed * Time.deltaTime, 
-                        //_movementY * translationSpeed * Time.deltaTime, 
             _movementX * translationSpeed * Time.fixedDeltaTime,
             _movementY * translationSpeed * Time.fixedDeltaTime,
             0f) * mainCamera.orthographicSize;

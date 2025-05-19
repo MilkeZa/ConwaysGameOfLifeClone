@@ -17,7 +17,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &2673960145508923998
 Transform:
@@ -143,7 +143,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01c1a5e91f2187245b5492c6925e59ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellPosition: {x: 0, y: 0}
   cellAliveColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   cellDeadColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &5514732709389025156
@@ -160,7 +159,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &1500637466021540432
 Transform:
