@@ -7,8 +7,8 @@ A simulator based on the rules of John Conway's game of life. Find more informat
 
 Initial simulation state
 
-![SimState_00](images/InGameScreenshot_01.png)
+![SimState_00](Images/InGameScreenshot_01.png)
 
 Simulation state after 50 steps
 
-![SimState_01](images/InGameScreenshot_02.png)
+![SimState_01](Images/InGameScreenshot_02.png)
